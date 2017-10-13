@@ -1,0 +1,4 @@
+flask
+flask-sse
+gunicorn
+gevent

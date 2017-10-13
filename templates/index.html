@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>日志文件实时监控</title>
+    <script>
+        var source = new EventSource("{{ url_for('sse.stream') }}");
+        source.addEventListener('greeting', function(event) {
+            var data = JSON.parse(event.data);
+            console.log(data.file_line);
+        }, false);
+
+        source.addEventListener('error', function(event) {
+            alert("Failed to connect to event stream. Is Redis running?");
+        }, false);
+
+    </script>
+</head>
+<body>
+
+</body>
+</html>
