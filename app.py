@@ -3,6 +3,8 @@ from flask import Flask
 from flask import render_template
 from flask_sse import sse
 from libs import coroutine
+import logging
+import threading
 import time
 app = Flask(__name__)
 app.debug = True
@@ -15,10 +17,11 @@ def hello_world():
     return render_template('index.html')
 
 
-@app.route('/send')
-def send_file_line():
-    sse.publish({'file_line': 'dsadasdsad'}, type='greeting')
-    return 'file msg send'
+@coroutine
+def printer():
+    while 1:
+        line = yield
+        logging.warning(line)
 
 
 def monitor_file(logfile, target):
@@ -30,5 +33,20 @@ def monitor_file(logfile, target):
             continue
         target.send(line)
 
+
+def log_file():
+    f = open('error.log')
+    gen_calling_obj = printer()
+    monitor_file(f, gen_calling_obj)
+
+
+@app.route('/send')
+def send_file_line():
+    # sse.publish({'file_line': 'dsadasdsad'}, type='greeting')
+    t = threading.Thread(target=log_file)
+    t.start()
+    t.join()
+    return 'file msg send'
+
 if __name__ == '__main__':
-    app.run()
+    app.run(threaded=True)
