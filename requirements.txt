@@ -1,5 +1,2 @@
 flask
 flask-sse
-gunicorn
-gevent
-futures

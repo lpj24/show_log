@@ -3,12 +3,11 @@ from flask import Flask
 from flask import render_template
 from flask_sse import sse
 from libs import coroutine
-import logging
 import threading
 import time
 app = Flask(__name__)
 app.debug = True
-app.config['REDIS_URL'] = 'redis://127.0.0.1'
+app.config['REDIS_URL'] = "redis://localhost"
 app.register_blueprint(sse, url_prefix='/stream')
 
 
@@ -21,7 +20,8 @@ def hello_world():
 def printer():
     while 1:
         line = yield
-        logging.warning(line)
+        # logging.warning(line)
+        sse.publish({'file_line': 123}, type='greeting')
 
 
 def monitor_file(logfile, target):
@@ -42,11 +42,12 @@ def log_file():
 
 @app.route('/send')
 def send_file_line():
-    # sse.publish({'file_line': 'dsadasdsad'}, type='greeting')
-    t = threading.Thread(target=log_file)
-    t.start()
-    t.join()
+    print 'send'
+    sse.publish({'message': 'dsadasdsad'}, type='greeting')
+    # t = threading.Thread(target=log_file)
+    # t.start()
+    # t.join()
     return 'file msg send'
 
 if __name__ == '__main__':
-    app.run(threaded=True)
+    app.run()
