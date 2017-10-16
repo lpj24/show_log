@@ -6,13 +6,20 @@ from libs import coroutine
 import threading
 import time
 app = Flask(__name__)
-app.debug = True
+app.debug = False
 app.config['REDIS_URL'] = "redis://localhost"
 app.register_blueprint(sse, url_prefix='/stream')
 
 
 @app.route('/')
 def hello_world():
+    f = open('C:\\Users\\Administrator\\Desktop\\error.log')
+    gen_calling_obj = printer()
+    monitor_file(f, gen_calling_obj)
+    # t = threading.Thread(target=log_file)
+    # t.start()
+    # t.join()
+
     return render_template('index.html')
 
 
@@ -20,8 +27,8 @@ def hello_world():
 def printer():
     while 1:
         line = yield
-        # logging.warning(line)
-        sse.publish({'file_line': 123}, type='greeting')
+        print line
+        sse.publish({'message': line}, type='greeting')
 
 
 def monitor_file(logfile, target):
@@ -35,7 +42,7 @@ def monitor_file(logfile, target):
 
 
 def log_file():
-    f = open('error.log')
+    f = open('C:\\Users\\Administrator\\Desktop\\error.log')
     gen_calling_obj = printer()
     monitor_file(f, gen_calling_obj)
 
@@ -43,11 +50,11 @@ def log_file():
 @app.route('/send')
 def send_file_line():
     print 'send'
-    sse.publish({'message': 'dsadasdsad'}, type='greeting')
-    # t = threading.Thread(target=log_file)
-    # t.start()
-    # t.join()
+    # f = open('error.log')
+    # gen_calling_obj = printer()
+    # monitor_file(f, gen_calling_obj)
+    # sse.publish({'message': 'lpj24'}, type='greeting')
     return 'file msg send'
 
 if __name__ == '__main__':
-    app.run()
+    app.run(port=8100, debug=app.debug, threaded=True)
