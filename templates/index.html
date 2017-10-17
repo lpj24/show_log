@@ -3,17 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <title>日志文件实时监控</title>
+    <script src="//cdn.bootcss.com/jquery/2.1.4/jquery.js"></script>
+       <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/1.3.5/socket.io.min.js"></script>
 </head>
 <body>
   <script>
-    var source = new EventSource("{{ url_for('sse.stream') }}");
-    source.addEventListener('greeting', function(event) {
-        var data = JSON.parse(event.data);
-        alert("The server says " + data.message);
-    }, false);
-    source.addEventListener('error', function(event) {
-        alert("Failed to connect to event stream. Is Redis running?");
-    }, false);
+    var socket = io.connect('ws://127.0.0.1:5000/log');
+    socket.on('connect', function() {
+        socket.emit('show_log', {data: 'I\'m connected!'});
+    });
+
+    socket.on('show_file_line', function(msg) {
+            console.log(msg);
+			$("#log-container div").append(msg);
+			// 滚动条滚动到最低部
+			$("#log-container").scrollTop($("#log-container div").height() - $("#log-container").height());
+    });
   </script>
     <div id="log-container" style="height: 450px; overflow-y: scroll; background: #333; color: #aaa; padding: 10px;">
 		<div>

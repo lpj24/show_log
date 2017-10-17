@@ -1,3 +1,2 @@
 flask
-flask-sse
-tornado
+flask-socketio
