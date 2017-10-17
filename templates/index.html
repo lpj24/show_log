@@ -8,7 +8,7 @@
 </head>
 <body>
   <script>
-    var socket = io.connect('ws://127.0.0.1:5000/log');
+    var socket = io.connect('http://127.0.0.1:5000/log');
     socket.on('connect', function() {
         socket.emit('show_log', {data: 'I\'m connected!'});
     });

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from flask import Flask
+from flask import Flask, request, copy_current_request_context
 from flask import render_template, redirect, url_for
 from libs import coroutine
 from celery import Celery
@@ -20,17 +20,16 @@ def hello_world():
 
 @socket_io.on('show_log', namespace='/log')
 def show_log(msg):
-    print msg
     r = subprocess.Popen("tail -f /home/huolibi/local/hbgj_statistics/log/error.log", stdin=subprocess.PIPE,
                          stdout=subprocess.PIPE, shell=True)
-    t = threading.Thread(target=tail_file, args=r)
+    t = threading.Thread(target=tail_file, args=(r, ))
     t.start()
 
 
 def tail_file(r):
-    line = r.readline()
+    line = r.stdout.readline()
     while line:
-        emit('show_file_line', line, namespace='/log')
+        socket_io.emit('show_file_line', line, namespace='/log')
 
 
 
