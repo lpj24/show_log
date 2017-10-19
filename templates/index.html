@@ -1,25 +1,27 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <title>日志文件实时监控</title>
-    <script src="//cdn.bootcss.com/jquery/2.1.4/jquery.js"></script>
-       <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/1.3.5/socket.io.min.js"></script>
+<meta charset="utf-8">
+<title>tail log</title>
+<script src="{{ static_url('jquery.min.js')}}"></script>
 </head>
 <body>
-  <script>
-    var socket = io.connect('http://127.0.0.1:5000/log');
-
-    socket.on('show_file_line', function(msg) {
-            console.log(msg);
-			$("#log-container div").append(msg);
-			// 滚动条滚动到最低部
-			$("#log-container").scrollTop($("#log-container div").height() - $("#log-container").height());
-    });
-  </script>
-    <div id="log-container" style="height: 450px; overflow-y: scroll; background: #333; color: #aaa; padding: 10px;">
+	<div id="log-container" style="height: 450px; overflow-y: scroll; background: #333; color: #aaa; padding: 10px;">
 		<div>
 		</div>
 	</div>
+</body>
+<script>
+	$(document).ready(function() {
+		// 指定websocket路径
+		var websocket = new WebSocket('ws://' + '{{domain}}' + ':' + '{{port}}' +'/log');
+		websocket.onmessage = function(event) {
+			// 接收服务端的实时日志并添加到HTML页面中
+			$("#log-container div").append(event.data + "</br>");
+			// 滚动条滚动到最低部
+			$("#log-container").scrollTop($("#log-container div").height() - $("#log-container").height());
+		};
+	});
+</script>
 </body>
 </html>

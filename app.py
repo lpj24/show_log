@@ -1,75 +1,96 @@
+#!./env/bin/python
 # -*- coding: utf-8 -*-
-from flask import Flask, request, copy_current_request_context
-from flask import render_template, redirect, url_for
-from libs import coroutine
+import tornado.web
+import tornado.websocket
+import tornado.httpserver
+import tornado.ioloop
 import threading
-import Queue
-from flask_socketio import SocketIO, emit, disconnect
+from libs import get_ip
 import subprocess
-app = Flask(__name__)
-app.debug = True
-
-socket_io = SocketIO(app)
-SHELL_PROCESS = None
-STREAM = None
+import os
 
 
-@app.route('/')
-def hello_world():
-    return render_template('index.html')
+
+class IndexPageHandler(tornado.web.RequestHandler):
+    def get(self):
+        ip = get_ip()
+        self.render('index.html', domain=ip, port=port)
 
 
-@socket_io.on('connect', namespace='/log')
-def show_log():
-    print 'socket io connect'
-    try:
-        global SHELL_PROCESS, STREAM
-        SHELL_PROCESS = subprocess.Popen("tail -f ~/Downloads/error.log", stdout=subprocess.PIPE, shell=True)
-        # t = threading.Thread(target=tail_file, args=(r, ))
-        STREAM = SHELL_PROCESS.stdout
-        t = ThreadExecuteJob(STREAM)
-        # STREAM.readlines()
+class LogHandler(tornado.websocket.WebSocketHandler):
+    def check_origin(self, origin):
+        return True
+
+    def open(self):
+        print "client is connection"
+        try:
+            shell_process = subprocess.Popen("tail -f " + log_path, stdout=subprocess.PIPE)
+        except OSError as e:
+            print e.message
+        stream = shell_process.stdout
+        t = ThreadExecuteJob(self, stream)
         t.setDaemon(True)
         t.start()
-    except Exception as e:
-        print 'error: ' + str(e.message)
 
+    def on_message(self, message):
+        self.write_message(u"Your message was: "+message)
 
-@socket_io.on('disconnect')
-def socket_close():
-    print 'web close'
-    if STREAM is not None:
-        STREAM.close()
-
-    if SHELL_PROCESS is not None:
-        SHELL_PROCESS.terminate()
-    # disconnect()
-
-
-# def tail_file(stream):
-#     line = stream.readline()
-#     while line:
-#         socket_io.emit('show_file_line', line + '<br/>', namespace='/log')
-#         line = stream.readline()
+    def on_close(self):
+        print "client lost connection"
 
 
 class ThreadExecuteJob(threading.Thread):
-    """Threaded Url Grab"""
-
-    def __init__(self, stream):
+    def __init__(self, ws_client, stream):
         threading.Thread.__init__(self)
         self.stream = stream
+        self.ws_client = ws_client
 
     def run(self):
-        line = self.stream.readline()
         while 1:
-            line = self.stream.readline()
-            if line:
-                socket_io.emit('show_file_line', line + '<br/>', namespace='/log')
+            try:
+                line = self.stream.readline()
+                if line:
+                    self.ws_client.write_message(line + '<br/>')
+            except Exception:
+                break
+
+
+class Application(tornado.web.Application):
+    def __init__(self):
+        handlers = [
+            (r'/', IndexPageHandler),
+            (r'/log', LogHandler)
+        ]
+
+        settings = {
+            "template_path": "templates",
+            "debug": False,
+            "static_path": os.path.join(os.path.dirname(__file__), "static"),
+        }
+        tornado.web.Application.__init__(self, handlers, **settings)
 
 
 if __name__ == '__main__':
-    socket_io.run(app, host='127.0.0.1', port=5000)
-    # f = open('C:\\Users\\Administrator\\Desktop\\error.log')
-    # gen_calling_obj = printer()
-    # monitor_file(f, gen_calling_obj)
+    import argparse
+
+    parser = argparse.ArgumentParser(usage='./env/bin/python app.py -path /home/lpj/error.log', description='start server and give log path')
+    parser.add_argument('-path', required=True, type=str, help=u'日志文件的具体路径')
+    parser.add_argument('-port', required=False, type=int, help=u'啓動端口')
+    args = parser.parse_args()
+    log_path = args.path
+    port = args.port
+
+    if not port:
+        port = 5500
+    if not os.path.exists(log_path):
+        print log_path + " no such file"
+        exit(0)
+
+    ws_app = Application()
+    server = tornado.httpserver.HTTPServer(ws_app)
+    server.listen(port)
+    print "server is listening " + str(port)
+    print "http://" + get_ip() + ":" + str(port)
+    tornado.ioloop.IOLoop.instance().start()
+
+
