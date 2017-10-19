@@ -24,10 +24,11 @@ class LogHandler(tornado.websocket.WebSocketHandler):
     def open(self):
         print "client is connection"
         try:
-            shell_process = subprocess.Popen("tail -f " + log_path, stdout=subprocess.PIPE)
+            shell_process = subprocess.Popen("tail -f " + log_path, shell=True)
+            stream = shell_process.stdout
         except OSError as e:
-            print e.message
-        stream = shell_process.stdout
+            print e.args[1]
+
         t = ThreadExecuteJob(self, stream)
         t.setDaemon(True)
         t.start()
