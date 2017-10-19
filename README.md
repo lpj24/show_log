@@ -7,4 +7,4 @@
     cd show_log
 
     ./env/bin/python app.py -path /var/log/syslog
-###path 后面添加需要查看的日志文件的完整路径
+###path 后面添加需要查看的日志文件的完整路径, 注意日志文件的权限是否可以执行tail

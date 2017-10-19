@@ -10,8 +10,7 @@ import subprocess
 import os
 
 
-
-class IndexPageHandler(tornado.web.RequestHandler):
+class IndexHandler(tornado.web.RequestHandler):
     def get(self):
         ip = get_ip()
         self.render('index.html', domain=ip, port=port)
@@ -24,7 +23,7 @@ class LogHandler(tornado.websocket.WebSocketHandler):
     def open(self):
         print "client is connection"
         try:
-            shell_process = subprocess.Popen("tail -f " + log_path, shell=True)
+            shell_process = subprocess.Popen("tail -f " + log_path, stdout=subprocess.PIPE,shell=True)
             stream = shell_process.stdout
         except OSError as e:
             print e.args[1]
@@ -59,7 +58,7 @@ class ThreadExecuteJob(threading.Thread):
 class Application(tornado.web.Application):
     def __init__(self):
         handlers = [
-            (r'/', IndexPageHandler),
+            (r'/', IndexHandler),
             (r'/log', LogHandler)
         ]
 
