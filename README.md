@@ -3,6 +3,7 @@
 ##实时(tail -f)查看日志文件
 
     git clone https://github.com/lpj24/show_log.git
+    pip install virtualenv
     virtualenv env
     source env/bin/activate
     cd show_log
