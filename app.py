@@ -62,7 +62,7 @@ class Application(tornado.web.Application):
         ]
 
         settings = {
-            "template_path": "templates",
+            "template_path": os.path.join(os.path.dirname(__file__), "templates"),
             "debug": False,
             "static_path": os.path.join(os.path.dirname(__file__), "static"),
         }
